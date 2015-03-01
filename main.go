@@ -159,24 +159,24 @@ func extractSide(src *image.RGBA, width int, sf sideFunc, hRot float64) *image.R
 	return res
 }
 
-func saveSide(img *image.RGBA, fname string) error {
+func saveSide(img *image.RGBA, fname string, quality int) error {
 	fd, err := os.Create(fname + ".jpg")
 	if err != nil {
 		return err
 	}
-	err = jpeg.Encode(fd, img, &jpeg.Options{jpeg.DefaultQuality})
+	err = jpeg.Encode(fd, img, &jpeg.Options{quality})
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func goAndSave(wg *sync.WaitGroup, fname string, src *image.RGBA, width int, sf sideFunc, hRot float64) {
+func goAndSave(wg *sync.WaitGroup, fname string, quality int, src *image.RGBA, width int, sf sideFunc, hRot float64) {
 	wg.Add(1)
 	go func() {
 		fmt.Println("processing: " + fname)
 		img := extractSide(src, width, sf, hRot)
-		err := saveSide(img, fname)
+		err := saveSide(img, fname, quality)
 		if err != nil {
 			fmt.Println(err.Error())
 		}
@@ -193,12 +193,14 @@ func main() {
 	var sidesStr string
 	var hRot float64
 	var width int
+	var quality int
 
 	flag.StringVar(&srcPath, "src", "sphere.jpg", "source file path")
 	flag.StringVar(&prefix, "prefix", "cube_", "name prefix for output images (<prefix><sidename>.jpg, cube_north.jpg, cube_top.jpg etc)")
 	flag.StringVar(&sidesStr, "sides", "north,south,west,east,top,bottom", "sides names for output images")
 	flag.Float64Var(&hRot, "rot", 0, "additional rotation around vertical axis (degrees)")
 	flag.IntVar(&width, "width", 256, "cube side width (in pixels)")
+	flag.IntVar(&quality, "quality", 92, "output JPEG quality, 1-100")
 	flag.Parse()
 
 	sides := strings.Split(sidesStr, ",")
@@ -214,11 +216,11 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	goAndSave(&wg, prefix+sides[North], img, width, vertSideFunc, 0)
-	goAndSave(&wg, prefix+sides[South], img, width, vertSideFunc, math.Pi)
-	goAndSave(&wg, prefix+sides[West], img, width, vertSideFunc, -math.Pi/2)
-	goAndSave(&wg, prefix+sides[East], img, width, vertSideFunc, math.Pi/2)
-	goAndSave(&wg, prefix+sides[Top], img, width, topSideFunc, 0)
-	goAndSave(&wg, prefix+sides[Bottom], img, width, bottomSideFunc, 0)
+	goAndSave(&wg, prefix+sides[North], quality, img, width, vertSideFunc, 0)
+	goAndSave(&wg, prefix+sides[South], quality, img, width, vertSideFunc, math.Pi)
+	goAndSave(&wg, prefix+sides[West], quality, img, width, vertSideFunc, -math.Pi/2)
+	goAndSave(&wg, prefix+sides[East], quality, img, width, vertSideFunc, math.Pi/2)
+	goAndSave(&wg, prefix+sides[Top], quality, img, width, topSideFunc, 0)
+	goAndSave(&wg, prefix+sides[Bottom], quality, img, width, bottomSideFunc, 0)
 	wg.Wait()
 }
