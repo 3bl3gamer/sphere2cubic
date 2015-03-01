@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image"
 	"image/jpeg"
+	"image/png"
 	"math"
 	"os"
 	"runtime"
@@ -23,6 +24,7 @@ const (
 
 func init() {
 	image.RegisterFormat("jpeg", "jpeg", jpeg.Decode, jpeg.DecodeConfig)
+	image.RegisterFormat("png", "png", png.Decode, png.DecodeConfig)
 }
 
 func min(a, b int) int {
@@ -44,8 +46,13 @@ func readImage(path string) (*image.RGBA, error) {
 	}
 	fmt.Println("OK")
 
-	rgba, ok := img.(*image.RGBA)
-	if !ok {
+	var rgba *image.RGBA
+	switch t := img.(type) {
+	case *image.RGBA:
+		rgba = t
+	case *image.NRGBA:
+		rgba = &image.RGBA{t.Pix, t.Stride, t.Rect}
+	default:
 		fmt.Print("converting to rgba... ")
 
 		rgba = image.NewRGBA(img.Bounds())
