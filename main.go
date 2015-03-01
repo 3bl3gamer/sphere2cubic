@@ -147,8 +147,8 @@ func extractSide(src *image.RGBA, width int, sf sideFunc, hRot float64) *image.R
 
 	for i := 0; i < width; i++ {
 		for j := 0; j < width; j++ {
-			ri := 1 - float64(i)*invWidth*2
-			rj := 1 - float64(j)*invWidth*2
+			ri := 1 - (float64(i)+0.5)*invWidth*2
+			rj := 1 - (float64(j)+0.5)*invWidth*2
 			xSrc, ySrc, xk, yk := sf(ri, rj, hRot, srcRWidth, srcRHeight)
 
 			r, g, b := lnrp(bufSrc, srcWidth, srcHeight, int(xSrc), int(ySrc), xk, yk)
@@ -209,6 +209,8 @@ func main() {
 		return
 	}
 
+	hRot = hRot / 180 * math.Pi
+
 	img, err := readImage(srcPath)
 	if err != nil {
 		fmt.Println(err.Error())
@@ -216,11 +218,11 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
-	goAndSave(&wg, prefix+sides[North], quality, img, width, vertSideFunc, 0)
-	goAndSave(&wg, prefix+sides[South], quality, img, width, vertSideFunc, math.Pi)
-	goAndSave(&wg, prefix+sides[West], quality, img, width, vertSideFunc, -math.Pi/2)
-	goAndSave(&wg, prefix+sides[East], quality, img, width, vertSideFunc, math.Pi/2)
-	goAndSave(&wg, prefix+sides[Top], quality, img, width, topSideFunc, 0)
-	goAndSave(&wg, prefix+sides[Bottom], quality, img, width, bottomSideFunc, 0)
+	goAndSave(&wg, prefix+sides[North], quality, img, width, vertSideFunc, hRot)
+	goAndSave(&wg, prefix+sides[South], quality, img, width, vertSideFunc, hRot+math.Pi)
+	goAndSave(&wg, prefix+sides[West], quality, img, width, vertSideFunc, hRot-math.Pi/2)
+	goAndSave(&wg, prefix+sides[East], quality, img, width, vertSideFunc, hRot+math.Pi/2)
+	goAndSave(&wg, prefix+sides[Top], quality, img, width, topSideFunc, hRot)
+	goAndSave(&wg, prefix+sides[Bottom], quality, img, width, bottomSideFunc, hRot)
 	wg.Wait()
 }
